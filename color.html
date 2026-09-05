@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circuit Color Maze</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+	background: #000;
+	color: #e6edf3;
+	font-family: 'Segoe UI', system-ui, sans-serif;
+	min-height: 100vh;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	user-select: none;
+  }
+  h1 {
+	font-size: 1.5rem;
+	margin-bottom: 0.5rem;
+	letter-spacing: 0.06em;
+	color: #58a6ff;
+  }
+  #ui {
+	display: flex;
+	gap: 1rem;
+	margin-bottom: 0.7rem;
+	align-items: center;
+	flex-wrap: wrap;
+	justify-content: center;
+  }
+  #ui > * {
+	background: #111;
+	padding: 0.35rem 0.9rem;
+	border-radius: 8px;
+	border: 1px solid #333;
+	font-size: 0.95rem;
+  }
+  #color-swatches {
+	display: flex;
+	gap: 6px;
+  }
+  .swatch {
+	width: 28px;
+	height: 28px;
+	border-radius: 50%;
+	border: 2px solid #555;
+	cursor: pointer;
+  }
+  .swatch.active {
+	border-color: #fff;
+	transform: scale(1.15);
+  }
+  #canvas-wrap {
+	position: relative;
+	border: 3px solid #333;
+	border-radius: 12px;
+	box-shadow: 0 0 40px rgba(0,0,0,0.8);
+  }
+  canvas {
+	display: block;
+	cursor: crosshair;
+  }
+  #message {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0,0,0,0.85);
+	font-size: 1.6rem;
+	text-align: center;
+	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.3s;
+  }
+  #message.show { opacity: 1; pointer-events: auto; }
+  #message button {
+	margin-top: 1.1rem;
+	padding: 0.55rem 1.6rem;
+	font-size: 1.05rem;
+	background: #238636;
+	color: white;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+  }
+  .hint {
+	margin-top: 0.7rem;
+	font-size: 0.9rem;
+	color: #888;
+  }
+</style>
+</head>
+<body>
+  <h1>Circuit Color Maze</h1>
+  <div id="ui">
+	<div id="color-swatches"></div>
+	<div id="progress">Colored: 0%</div>
+	<button id="clear-btn" style="background:#333;color:#eee;border:1px solid #555;padding:0.35rem 0.9rem;border-radius:8px;cursor:pointer;">Clear</button>
+	<button id="new-btn" style="background:#333;color:#eee;border:1px solid #555;padding:0.35rem 0.9rem;border-radius:8px;cursor:pointer;">New Maze</button>
+  </div>
+  <div id="canvas-wrap">
+	<canvas id="game" width="720" height="480"></canvas>
+	<div id="message">
+	  <div id="msg-text">Color the white lines<br><span style="font-size:1rem;opacity:0.8">like a maze</span></div>
+	  <button id="start-btn">Start Coloring</button>
+	</div>
+  </div>
+  <p class="hint">Hold and drag to color only on the white lines • Lines appear only between the symbols</p>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const W = canvas.width;
+const H = canvas.height;
+
+const COLS = 6;
+const ROWS = 4;
+const TILE = Math.min(W / COLS, H / ROWS);
+const OFFSET_X = (W - COLS * TILE) / 2;
+const OFFSET_Y = (H - ROWS * TILE) / 2;
+
+const CAPACITOR_PATHS = [
+  "M 470 250 C 470 371.503 371.503 470 250 470 C 128.497 470 30 371.503 30 250 C 30 128.497 128.497 30 250 30 C 371.503 30 470 128.497 470 250 Z",
+  "M 180 150 L 180 350 M 220 150 L 220 350",
+  "M 50 250 L 180 250 M 220 250 L 450 250"
+];
+
+const DIODE_PATHS = [
+  "M 250 30 C 371.503 30 470 128.497 470 250 C 470 371.503 371.503 470 250 470 C 128.497 470 30 371.503 30 250 C 30 128.497 128.497 30 250 30 Z",
+  "M 160 160 L 160 340 L 280 250 L 160 160 Z",
+  "M 280 160 L 280 340",
+  "M 50 250 L 160 250 M 280 250 L 450 250"
+];
+
+const ALLOWED_ROTATIONS = [0, 90, 180, 270];
+
+const COLORS = [
+  '#ff4d6d', '#ff9f1c', '#ffd60a', '#80ed99',
+  '#4cc9f0', '#7b2cbf', '#f72585', '#ffffff'
+];
+let currentColor = COLORS[0];
+
+const maskCanvas = document.createElement('canvas');
+maskCanvas.width = W;
+maskCanvas.height = H;
+const maskCtx = maskCanvas.getContext('2d');
+
+const paintCanvas = document.createElement('canvas');
+paintCanvas.width = W;
+paintCanvas.height = H;
+const paintCtx = paintCanvas.getContext('2d');
+
+let tiles = [];
+let mouse = { x: 0, y: 0, down: false };
+let started = false;
+
+function drawPath(ctx, d, scale, ox, oy, rot) {
+  const tokens = d.match(/[MmLlHhVvCcZz]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g) || [];
+  let i = 0, cmd = null, x = 0, y = 0, sx = 0, sy = 0;
+
+  function rotPt(px, py) {
+	px -= 250; py -= 250;
+	let rx, ry;
+	if (rot === 90)      { rx = -py; ry =  px; }
+	else if (rot === 180) { rx = -px; ry = -py; }
+	else if (rot === 270) { rx =  py; ry = -px; }
+	else                  { rx =  px; ry =  py; }
+	return [ox + (rx + 250) * scale, oy + (ry + 250) * scale];
+  }
+
+  ctx.beginPath();
+  while (i < tokens.length) {
+	const t = tokens[i];
+	if (/[A-Za-z]/.test(t)) {
+	  cmd = t;
+	  i++;
+	  if (cmd === 'Z' || cmd === 'z') {
+		ctx.closePath();
+		x = sx; y = sy;
+	  }
+	  continue;
+	}
+	if (cmd === 'M' || cmd === 'm' || cmd === 'L' || cmd === 'l') {
+	  let px = parseFloat(t), py = parseFloat(tokens[i + 1]);
+	  if (cmd === 'm' || cmd === 'l') { px += x; py += y; }
+	  [x, y] = rotPt(px, py);
+	  if (cmd === 'M' || cmd === 'm') {
+		ctx.moveTo(x, y);
+		sx = x; sy = y;
+		cmd = cmd === 'M' ? 'L' : 'l';
+	  } else {
+		ctx.lineTo(x, y);
+	  }
+	  i += 2;
+	} else if (cmd === 'H' || cmd === 'h') {
+	  let px = parseFloat(t);
+	  if (cmd === 'h') px += x;
+	  [x, y] = rotPt(px, y);
+	  ctx.lineTo(x, y);
+	  i++;
+	} else if (cmd === 'V' || cmd === 'v') {
+	  let py = parseFloat(t);
+	  if (cmd === 'v') py += y;
+	  [x, y] = rotPt(x, py);
+	  ctx.lineTo(x, y);
+	  i++;
+	} else if (cmd === 'C' || cmd === 'c') {
+	  const pts = [];
+	  for (let k = 0; k < 3; k++) {
+		let px = parseFloat(tokens[i]), py = parseFloat(tokens[i + 1]);
+		if (cmd === 'c') { px += x; py += y; }
+		pts.push(rotPt(px, py));
+		i += 2;
+	  }
+	  ctx.bezierCurveTo(pts[0][0], pts[0][1], pts[1][0], pts[1][1], pts[2][0], pts[2][1]);
+	  x = pts[2][0]; y = pts[2][1];
+	} else {
+	  i++;
+	}
+  }
+}
+
+function makeTile(col, row) {
+  return {
+	col, row,
+	type: Math.random() < 0.5 ? 'capacitor' : 'diode',
+	rot: ALLOWED_ROTATIONS[Math.floor(Math.random() * 4)]
+  };
+}
+
+function initBoard() {
+  tiles = [];
+  for (let r = 0; r < ROWS; r++) {
+	for (let c = 0; c < COLS; c++) {
+	  tiles.push(makeTile(c, r));
+	}
+  }
+  buildMask();
+  clearPaint();
+}
+
+function buildMask() {
+  maskCtx.fillStyle = '#000';
+  maskCtx.fillRect(0, 0, W, H);
+
+  const scale = TILE / 500;
+  maskCtx.strokeStyle = '#fff';
+  maskCtx.lineCap = 'round';
+  maskCtx.lineJoin = 'round';
+  maskCtx.lineWidth = 5.5;
+
+  // 1. Draw every component (rotated)
+  for (const t of tiles) {
+	const ox = OFFSET_X + t.col * TILE;
+	const oy = OFFSET_Y + t.row * TILE;
+	const paths = t.type === 'capacitor' ? CAPACITOR_PATHS : DIODE_PATHS;
+
+	for (const d of paths) {
+	  drawPath(maskCtx, d, scale, ox, oy, t.rot);
+	  maskCtx.stroke();
+	}
+  }
+
+  // 2. Draw short connectors ONLY in the gaps between tiles
+  //    (these never go through the middle of a symbol)
+  maskCtx.beginPath();
+
+  // Horizontal connectors (between left-right neighbors)
+  for (let r = 0; r < ROWS; r++) {
+	for (let c = 0; c < COLS - 1; c++) {
+	  const x1 = OFFSET_X + (c + 1) * TILE;          // shared vertical edge
+	  const y  = OFFSET_Y + r * TILE + TILE / 2;     // vertical center
+
+	  // short segment that sits in the gap between the two circles
+	  const gap = TILE * 0.12;   // how far the connector reaches into each tile
+	  maskCtx.moveTo(x1 - gap, y);
+	  maskCtx.lineTo(x1 + gap, y);
+	}
+  }
+
+  // Vertical connectors (between top-bottom neighbors)
+  for (let r = 0; r < ROWS - 1; r++) {
+	for (let c = 0; c < COLS; c++) {
+	  const x  = OFFSET_X + c * TILE + TILE / 2;
+	  const y1 = OFFSET_Y + (r + 1) * TILE;          // shared horizontal edge
+
+	  const gap = TILE * 0.12;
+	  maskCtx.moveTo(x, y1 - gap);
+	  maskCtx.lineTo(x, y1 + gap);
+	}
+  }
+
+  maskCtx.stroke();
+}
+
+function clearPaint() {
+  paintCtx.clearRect(0, 0, W, H);
+  updateProgress();
+}
+
+function paintAt(x, y, radius = 8) {
+  const img = maskCtx.getImageData(
+	Math.max(0, Math.floor(x - radius)),
+	Math.max(0, Math.floor(y - radius)),
+	radius * 2 + 1,
+	radius * 2 + 1
+  );
+  const data = img.data;
+
+  paintCtx.fillStyle = currentColor;
+  paintCtx.beginPath();
+
+  for (let py = 0; py < img.height; py++) {
+	for (let px = 0; px < img.width; px++) {
+	  const idx = (py * img.width + px) * 4;
+	  if (data[idx] > 180) {
+		const dx = px - radius;
+		const dy = py - radius;
+		if (dx * dx + dy * dy <= radius * radius) {
+		  paintCtx.rect(
+			Math.floor(x - radius + px),
+			Math.floor(y - radius + py),
+			1, 1
+		  );
+		}
+	  }
+	}
+  }
+  paintCtx.fill();
+}
+
+function updateProgress() {
+  const sample = paintCtx.getImageData(0, 0, W, H).data;
+  const mask = maskCtx.getImageData(0, 0, W, H).data;
+  let totalLine = 0;
+  let colored = 0;
+  for (let i = 0; i < mask.length; i += 16) {
+	if (mask[i] > 180) {
+	  totalLine++;
+	  if (sample[i] > 30 || sample[i + 1] > 30 || sample[i + 2] > 30) colored++;
+	}
+  }
+  const pct = totalLine ? Math.min(100, Math.round((colored / totalLine) * 100)) : 0;
+  document.getElementById('progress').textContent = `Colored: ${pct}%`;
+}
+
+function draw() {
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(maskCanvas, 0, 0);
+  ctx.drawImage(paintCanvas, 0, 0);
+
+  if (mouse.down) {
+	ctx.strokeStyle = currentColor;
+	ctx.lineWidth = 2;
+	ctx.globalAlpha = 0.7;
+	ctx.beginPath();
+	ctx.arc(mouse.x, mouse.y, 11, 0, Math.PI * 2);
+	ctx.stroke();
+	ctx.globalAlpha = 1;
+  }
+}
+
+function start() {
+  started = true;
+  document.getElementById('message').classList.remove('show');
+  initBoard();
+}
+
+// Swatches
+const swatchBox = document.getElementById('color-swatches');
+COLORS.forEach((c, i) => {
+  const s = document.createElement('div');
+  s.className = 'swatch' + (i === 0 ? ' active' : '');
+  s.style.background = c;
+  s.addEventListener('click', () => {
+	currentColor = c;
+	document.querySelectorAll('.swatch').forEach(el => el.classList.remove('active'));
+	s.classList.add('active');
+  });
+  swatchBox.appendChild(s);
+});
+
+document.getElementById('clear-btn').addEventListener('click', clearPaint);
+document.getElementById('new-btn').addEventListener('click', initBoard);
+document.getElementById('start-btn').addEventListener('click', start);
+
+function getPos(e) {
+  const rect = canvas.getBoundingClientRect();
+  const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+  const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+  return {
+	x: (clientX - rect.left) * (canvas.width / rect.width),
+	y: (clientY - rect.top) * (canvas.height / rect.height)
+  };
+}
+
+canvas.addEventListener('mousedown', e => {
+  if (!started) return;
+  mouse.down = true;
+  const p = getPos(e);
+  mouse.x = p.x; mouse.y = p.y;
+  paintAt(p.x, p.y);
+});
+canvas.addEventListener('mouseup', () => mouse.down = false);
+canvas.addEventListener('mouseleave', () => mouse.down = false);
+canvas.addEventListener('mousemove', e => {
+  const p = getPos(e);
+  mouse.x = p.x; mouse.y = p.y;
+  if (mouse.down && started) {
+	paintAt(p.x, p.y, 9);
+	paintAt(p.x - 2, p.y - 1, 7);
+  }
+});
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  if (!started) return;
+  mouse.down = true;
+  const p = getPos(e);
+  mouse.x = p.x; mouse.y = p.y;
+  paintAt(p.x, p.y);
+}, { passive: false });
+canvas.addEventListener('touchend', () => mouse.down = false);
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const p = getPos(e);
+  mouse.x = p.x; mouse.y = p.y;
+  if (mouse.down && started) paintAt(p.x, p.y, 10);
+}, { passive: false });
+
+setInterval(updateProgress, 400);
+
+function loop() {
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+document.getElementById('message').classList.add('show');
+</script>
+</body>
+</html>
