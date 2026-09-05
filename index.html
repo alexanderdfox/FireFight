@@ -7,93 +7,93 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
-	background: #0d1117;
-	color: #e6edf3;
-	font-family: 'Segoe UI', system-ui, sans-serif;
-	min-height: 100vh;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	overflow: hidden;
-	user-select: none;
+    background: #0d1117;
+    color: #e6edf3;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    user-select: none;
   }
   h1 {
-	font-size: 1.6rem;
-	margin-bottom: 0.4rem;
-	letter-spacing: 0.05em;
-	color: #58a6ff;
+    font-size: 1.6rem;
+    margin-bottom: 0.4rem;
+    letter-spacing: 0.05em;
+    color: #58a6ff;
   }
   #ui {
-	display: flex;
-	gap: 1.5rem;
-	margin-bottom: 0.8rem;
-	font-size: 1.1rem;
-	align-items: center;
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 0.8rem;
+    font-size: 1.1rem;
+    align-items: center;
   }
   #score, #lives, #level {
-	background: #161b22;
-	padding: 0.35rem 0.9rem;
-	border-radius: 8px;
-	border: 1px solid #30363d;
+    background: #161b22;
+    padding: 0.35rem 0.9rem;
+    border-radius: 8px;
+    border: 1px solid #30363d;
   }
   #canvas-wrap {
-	position: relative;
-	border: 3px solid #30363d;
-	border-radius: 12px;
-	box-shadow: 0 0 30px rgba(0,0,0,0.6);
-	background: #010409;
+    position: relative;
+    border: 3px solid #30363d;
+    border-radius: 12px;
+    box-shadow: 0 0 30px rgba(0,0,0,0.6);
+    background: #010409;
   }
   canvas {
-	display: block;
-	cursor: crosshair;
+    display: block;
+    cursor: crosshair;
   }
   #message {
-	position: absolute;
-	inset: 0;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	background: rgba(1,4,9,0.85);
-	font-size: 1.8rem;
-	text-align: center;
-	pointer-events: none;
-	opacity: 0;
-	transition: opacity 0.3s;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(1,4,9,0.85);
+    font-size: 1.8rem;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
   }
   #message.show { opacity: 1; pointer-events: auto; }
   #message button {
-	margin-top: 1.2rem;
-	padding: 0.6rem 1.8rem;
-	font-size: 1.1rem;
-	background: #238636;
-	color: white;
-	border: none;
-	border-radius: 8px;
-	cursor: pointer;
+    margin-top: 1.2rem;
+    padding: 0.6rem 1.8rem;
+    font-size: 1.1rem;
+    background: #238636;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
   }
   #message button:hover { background: #2ea043; }
   .hint {
-	margin-top: 0.7rem;
-	font-size: 0.95rem;
-	color: #8b949e;
+    margin-top: 0.7rem;
+    font-size: 0.95rem;
+    color: #8b949e;
   }
 </style>
 </head>
 <body>
   <h1>⚡ Circuit Firefighters</h1>
   <div id="ui">
-	<div id="score">Score: 0</div>
-	<div id="lives">Lives: 3</div>
-	<div id="level">Level: 1</div>
+    <div id="score">Score: 0</div>
+    <div id="lives">Lives: 3</div>
+    <div id="level">Level: 1</div>
   </div>
   <div id="canvas-wrap">
-	<canvas id="game" width="720" height="480"></canvas>
-	<div id="message">
-	  <div id="msg-text">Click to start</div>
-	  <button id="restart">Play</button>
-	</div>
+    <canvas id="game" width="720" height="480"></canvas>
+    <div id="message">
+      <div id="msg-text">Click to start</div>
+      <button id="restart">Play</button>
+    </div>
   </div>
   <p class="hint">Hold left mouse button and move to spray water • Fire only burns on the component paths</p>
 
@@ -130,7 +130,7 @@ const LINES_PATHS = [
   "M450 250 H500"
 ];
 
-// Only these four rotations are ever used
+// Only these four rotations are ever used for the components
 const ALLOWED_ROTATIONS = [0, 90, 180, 270];
 
 function drawPath(d, scale, ox, oy, rot) {
@@ -138,64 +138,64 @@ function drawPath(d, scale, ox, oy, rot) {
   let i = 0, cmd = null, x = 0, y = 0, sx = 0, sy = 0;
 
   function rotPt(px, py) {
-	px -= 250; py -= 250;
-	let rx, ry;
-	if (rot === 90)      { rx = -py; ry =  px; }
-	else if (rot === 180) { rx = -px; ry = -py; }
-	else if (rot === 270) { rx =  py; ry = -px; }
-	else                  { rx =  px; ry =  py; } // 0°
-	return [ox + (rx + 250) * scale, oy + (ry + 250) * scale];
+    px -= 250; py -= 250;
+    let rx, ry;
+    if (rot === 90)      { rx = -py; ry =  px; }
+    else if (rot === 180) { rx = -px; ry = -py; }
+    else if (rot === 270) { rx =  py; ry = -px; }
+    else                  { rx =  px; ry =  py; } // 0°
+    return [ox + (rx + 250) * scale, oy + (ry + 250) * scale];
   }
 
   ctx.beginPath();
   while (i < tokens.length) {
-	const t = tokens[i];
-	if (/[A-Za-z]/.test(t)) {
-	  cmd = t;
-	  i++;
-	  if (cmd === 'Z' || cmd === 'z') {
-		ctx.closePath();
-		x = sx; y = sy;
-	  }
-	  continue;
-	}
-	if (cmd === 'M' || cmd === 'm' || cmd === 'L' || cmd === 'l') {
-	  let px = parseFloat(t), py = parseFloat(tokens[i + 1]);
-	  if (cmd === 'm' || cmd === 'l') { px += x; py += y; }
-	  [x, y] = rotPt(px, py);
-	  if (cmd === 'M' || cmd === 'm') {
-		ctx.moveTo(x, y);
-		sx = x; sy = y;
-		cmd = cmd === 'M' ? 'L' : 'l';
-	  } else {
-		ctx.lineTo(x, y);
-	  }
-	  i += 2;
-	} else if (cmd === 'H' || cmd === 'h') {
-	  let px = parseFloat(t);
-	  if (cmd === 'h') px += x;
-	  [x, y] = rotPt(px, y);
-	  ctx.lineTo(x, y);
-	  i++;
-	} else if (cmd === 'V' || cmd === 'v') {
-	  let py = parseFloat(t);
-	  if (cmd === 'v') py += y;
-	  [x, y] = rotPt(x, py);
-	  ctx.lineTo(x, y);
-	  i++;
-	} else if (cmd === 'C' || cmd === 'c') {
-	  const pts = [];
-	  for (let k = 0; k < 3; k++) {
-		let px = parseFloat(tokens[i]), py = parseFloat(tokens[i + 1]);
-		if (cmd === 'c') { px += x; py += y; }
-		pts.push(rotPt(px, py));
-		i += 2;
-	  }
-	  ctx.bezierCurveTo(pts[0][0], pts[0][1], pts[1][0], pts[1][1], pts[2][0], pts[2][1]);
-	  x = pts[2][0]; y = pts[2][1];
-	} else {
-	  i++;
-	}
+    const t = tokens[i];
+    if (/[A-Za-z]/.test(t)) {
+      cmd = t;
+      i++;
+      if (cmd === 'Z' || cmd === 'z') {
+        ctx.closePath();
+        x = sx; y = sy;
+      }
+      continue;
+    }
+    if (cmd === 'M' || cmd === 'm' || cmd === 'L' || cmd === 'l') {
+      let px = parseFloat(t), py = parseFloat(tokens[i + 1]);
+      if (cmd === 'm' || cmd === 'l') { px += x; py += y; }
+      [x, y] = rotPt(px, py);
+      if (cmd === 'M' || cmd === 'm') {
+        ctx.moveTo(x, y);
+        sx = x; sy = y;
+        cmd = cmd === 'M' ? 'L' : 'l';
+      } else {
+        ctx.lineTo(x, y);
+      }
+      i += 2;
+    } else if (cmd === 'H' || cmd === 'h') {
+      let px = parseFloat(t);
+      if (cmd === 'h') px += x;
+      [x, y] = rotPt(px, y);
+      ctx.lineTo(x, y);
+      i++;
+    } else if (cmd === 'V' || cmd === 'v') {
+      let py = parseFloat(t);
+      if (cmd === 'v') py += y;
+      [x, y] = rotPt(x, py);
+      ctx.lineTo(x, y);
+      i++;
+    } else if (cmd === 'C' || cmd === 'c') {
+      const pts = [];
+      for (let k = 0; k < 3; k++) {
+        let px = parseFloat(tokens[i]), py = parseFloat(tokens[i + 1]);
+        if (cmd === 'c') { px += x; py += y; }
+        pts.push(rotPt(px, py));
+        i += 2;
+      }
+      ctx.bezierCurveTo(pts[0][0], pts[0][1], pts[1][0], pts[1][1], pts[2][0], pts[2][1]);
+      x = pts[2][0]; y = pts[2][1];
+    } else {
+      i++;
+    }
   }
 }
 
@@ -213,20 +213,20 @@ let fireInterval = 2200;
 
 function makeTile(col, row) {
   return {
-	col, row,
-	type: Math.random() < 0.5 ? 'capacitor' : 'diode',
-	rot: ALLOWED_ROTATIONS[Math.floor(Math.random() * 4)], // strictly 0/90/180/270
-	fire: 0,
-	burned: false
+    col, row,
+    type: Math.random() < 0.5 ? 'capacitor' : 'diode',
+    rot: ALLOWED_ROTATIONS[Math.floor(Math.random() * 4)], // strictly 0/90/180/270
+    fire: 0,
+    burned: false
   };
 }
 
 function initBoard() {
   tiles = [];
   for (let r = 0; r < ROWS; r++) {
-	for (let c = 0; c < COLS; c++) {
-	  tiles.push(makeTile(c, r));
-	}
+    for (let c = 0; c < COLS; c++) {
+      tiles.push(makeTile(c, r));
+    }
   }
 }
 
@@ -241,112 +241,112 @@ function update(dt) {
   if (!running) return;
 
   for (const t of tiles) {
-	if (t.fire > 0) {
-	  t.fire += dt * (7 + level * 1.4);
-	  if (t.fire >= 100) {
-		t.fire = 0;
-		t.burned = true;
-		lives--;
-		const cx = OFFSET_X + t.col * TILE + TILE / 2;
-		const cy = OFFSET_Y + t.row * TILE + TILE / 2;
-		for (let i = 0; i < 16; i++) {
-		  particles.push({
-			x: cx, y: cy,
-			vx: (Math.random() - 0.5) * 5,
-			vy: (Math.random() - 0.5) * 5,
-			life: 0.5 + Math.random() * 0.4,
-			color: `hsl(${15 + Math.random() * 25}, 100%, 55%)`
-		  });
-		}
-		if (lives <= 0) gameOver();
-	  }
-	}
+    if (t.fire > 0) {
+      t.fire += dt * (7 + level * 1.4);
+      if (t.fire >= 100) {
+        t.fire = 0;
+        t.burned = true;
+        lives--;
+        const cx = OFFSET_X + t.col * TILE + TILE / 2;
+        const cy = OFFSET_Y + t.row * TILE + TILE / 2;
+        for (let i = 0; i < 16; i++) {
+          particles.push({
+            x: cx, y: cy,
+            vx: (Math.random() - 0.5) * 5,
+            vy: (Math.random() - 0.5) * 5,
+            life: 0.5 + Math.random() * 0.4,
+            color: `hsl(${15 + Math.random() * 25}, 100%, 55%)`
+          });
+        }
+        if (lives <= 0) gameOver();
+      }
+    }
   }
 
   // occasional spread to adjacent tiles
   if (Math.random() < 0.0018 * level) {
-	const burning = tiles.filter(t => t.fire > 35);
-	for (const b of burning) {
-	  const neighbors = tiles.filter(t =>
-		Math.abs(t.col - b.col) + Math.abs(t.row - b.row) === 1 &&
-		t.fire === 0 && !t.burned
-	  );
-	  if (neighbors.length && Math.random() < 0.28) {
-		neighbors[Math.floor(Math.random() * neighbors.length)].fire = 12;
-	  }
-	}
+    const burning = tiles.filter(t => t.fire > 35);
+    for (const b of burning) {
+      const neighbors = tiles.filter(t =>
+        Math.abs(t.col - b.col) + Math.abs(t.row - b.row) === 1 &&
+        t.fire === 0 && !t.burned
+      );
+      if (neighbors.length && Math.random() < 0.28) {
+        neighbors[Math.floor(Math.random() * neighbors.length)].fire = 12;
+      }
+    }
   }
 
   lastFireSpawn += dt * 1000;
   if (lastFireSpawn > fireInterval) {
-	spawnFire();
-	lastFireSpawn = 0;
-	fireInterval = Math.max(850, 2200 - level * 110);
+    spawnFire();
+    lastFireSpawn = 0;
+    fireInterval = Math.max(850, 2200 - level * 110);
   }
 
   // water spray
   if (mouse.down) {
-	for (let i = 0; i < 3; i++) {
-	  waterDrops.push({
-		x: mouse.x + (Math.random() - 0.5) * 10,
-		y: mouse.y + (Math.random() - 0.5) * 10,
-		vx: (Math.random() - 0.5) * 2.2,
-		vy: (Math.random() - 0.5) * 2.2 + 1.2,
-		life: 0.45 + Math.random() * 0.3
-	  });
-	}
-	const col = Math.floor((mouse.x - OFFSET_X) / TILE);
-	const row = Math.floor((mouse.y - OFFSET_Y) / TILE);
-	if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
-	  const t = tiles[row * COLS + col];
-	  if (t.fire > 0) {
-		t.fire = Math.max(0, t.fire - 32 * dt);
-		if (t.fire === 0) {
-		  score += 50 + level * 10;
-		  const cx = OFFSET_X + t.col * TILE + TILE / 2;
-		  const cy = OFFSET_Y + t.row * TILE + TILE / 2;
-		  for (let i = 0; i < 9; i++) {
-			particles.push({
-			  x: cx, y: cy,
-			  vx: (Math.random() - 0.5) * 2.5,
-			  vy: -Math.random() * 2.8 - 0.8,
-			  life: 0.45 + Math.random() * 0.35,
-			  color: 'rgba(160,210,255,0.75)'
-			});
-		  }
-		}
-	  }
-	}
+    for (let i = 0; i < 3; i++) {
+      waterDrops.push({
+        x: mouse.x + (Math.random() - 0.5) * 10,
+        y: mouse.y + (Math.random() - 0.5) * 10,
+        vx: (Math.random() - 0.5) * 2.2,
+        vy: (Math.random() - 0.5) * 2.2 + 1.2,
+        life: 0.45 + Math.random() * 0.3
+      });
+    }
+    const col = Math.floor((mouse.x - OFFSET_X) / TILE);
+    const row = Math.floor((mouse.y - OFFSET_Y) / TILE);
+    if (col >= 0 && col < COLS && row >= 0 && row < ROWS) {
+      const t = tiles[row * COLS + col];
+      if (t.fire > 0) {
+        t.fire = Math.max(0, t.fire - 32 * dt);
+        if (t.fire === 0) {
+          score += 50 + level * 10;
+          const cx = OFFSET_X + t.col * TILE + TILE / 2;
+          const cy = OFFSET_Y + t.row * TILE + TILE / 2;
+          for (let i = 0; i < 9; i++) {
+            particles.push({
+              x: cx, y: cy,
+              vx: (Math.random() - 0.5) * 2.5,
+              vy: -Math.random() * 2.8 - 0.8,
+              life: 0.45 + Math.random() * 0.35,
+              color: 'rgba(160,210,255,0.75)'
+            });
+          }
+        }
+      }
+    }
   }
 
   // particles & drops
   for (let i = particles.length - 1; i >= 0; i--) {
-	const p = particles[i];
-	p.x += p.vx;
-	p.y += p.vy;
-	p.life -= dt;
-	if (p.life <= 0) particles.splice(i, 1);
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
   }
   for (let i = waterDrops.length - 1; i >= 0; i--) {
-	const d = waterDrops[i];
-	d.x += d.vx;
-	d.y += d.vy;
-	d.life -= dt;
-	if (d.life <= 0) waterDrops.splice(i, 1);
+    const d = waterDrops[i];
+    d.x += d.vx;
+    d.y += d.vy;
+    d.life -= dt;
+    if (d.life <= 0) waterDrops.splice(i, 1);
   }
 
   // level progression
   const activeFires = tiles.filter(t => t.fire > 0).length;
   const burnedCount = tiles.filter(t => t.burned).length;
   if (activeFires === 0 && burnedCount === 0 && score > level * 280) {
-	level++;
-	tiles.forEach(t => {
-	  if (Math.random() < 0.45) {
-		t.burned = false;
-		t.type = Math.random() < 0.5 ? 'capacitor' : 'diode';
-		t.rot = ALLOWED_ROTATIONS[Math.floor(Math.random() * 4)];
-	  }
-	});
+    level++;
+    tiles.forEach(t => {
+      if (Math.random() < 0.45) {
+        t.burned = false;
+        t.type = Math.random() < 0.5 ? 'capacitor' : 'diode';
+        t.rot = ALLOWED_ROTATIONS[Math.floor(Math.random() * 4)];
+      }
+    });
   }
 
   document.getElementById('score').textContent = `Score: ${score}`;
@@ -362,113 +362,113 @@ function draw() {
   ctx.strokeStyle = 'rgba(48,54,61,0.35)';
   ctx.lineWidth = 1;
   for (let c = 0; c <= COLS; c++) {
-	ctx.beginPath();
-	ctx.moveTo(OFFSET_X + c * TILE, OFFSET_Y);
-	ctx.lineTo(OFFSET_X + c * TILE, OFFSET_Y + ROWS * TILE);
-	ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(OFFSET_X + c * TILE, OFFSET_Y);
+    ctx.lineTo(OFFSET_X + c * TILE, OFFSET_Y + ROWS * TILE);
+    ctx.stroke();
   }
   for (let r = 0; r <= ROWS; r++) {
-	ctx.beginPath();
-	ctx.moveTo(OFFSET_X, OFFSET_Y + r * TILE);
-	ctx.lineTo(OFFSET_X + COLS * TILE, OFFSET_Y + r * TILE);
-	ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(OFFSET_X, OFFSET_Y + r * TILE);
+    ctx.lineTo(OFFSET_X + COLS * TILE, OFFSET_Y + r * TILE);
+    ctx.stroke();
   }
 
   const scale = TILE / 500;
 
   for (const t of tiles) {
-	const ox = OFFSET_X + t.col * TILE;
-	const oy = OFFSET_Y + t.row * TILE;
+    const ox = OFFSET_X + t.col * TILE;
+    const oy = OFFSET_Y + t.row * TILE;
 
-	if (t.burned) {
-	  ctx.fillStyle = 'rgba(45,12,12,0.75)';
-	  ctx.fillRect(ox + 3, oy + 3, TILE - 6, TILE - 6);
-	}
+    if (t.burned) {
+      ctx.fillStyle = 'rgba(45,12,12,0.75)';
+      ctx.fillRect(ox + 3, oy + 3, TILE - 6, TILE - 6);
+    }
 
-	const paths = t.type === 'capacitor' ? CAPACITOR_PATHS : DIODE_PATHS;
+    const paths = t.type === 'capacitor' ? CAPACITOR_PATHS : DIODE_PATHS;
 
-	// 1. Draw the component paths (normal or burned color)
-	ctx.lineCap = 'round';
-	ctx.lineJoin = 'round';
-	ctx.strokeStyle = t.burned ? '#5a3535' : '#c9d1d9';
-	ctx.lineWidth = 2.4;
-	for (const d of paths) {
-	  drawPath(d, scale, ox, oy, t.rot);
-	  ctx.stroke();
-	}
+    // 1. Draw the component paths (rotated)
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = t.burned ? '#5a3535' : '#c9d1d9';
+    ctx.lineWidth = 2.4;
+    for (const d of paths) {
+      drawPath(d, scale, ox, oy, t.rot);   // uses tile rotation
+      ctx.stroke();
+    }
 
-	// 2. Connecting lines (never on fire)
-	ctx.strokeStyle = t.burned ? '#4a2e2e' : '#8b949e';
-	ctx.lineWidth = 2;
-	for (const d of LINES_PATHS) {
-	  drawPath(d, scale, ox, oy, t.rot);
-	  ctx.stroke();
-	}
+    // 2. Connecting lines – NEVER rotated (always rot = 0)
+    ctx.strokeStyle = t.burned ? '#4a2e2e' : '#8b949e';
+    ctx.lineWidth = 2;
+    for (const d of LINES_PATHS) {
+      drawPath(d, scale, ox, oy, 0);       // fixed orientation
+      ctx.stroke();
+    }
 
-	// 3. FIRE – drawn ONLY along the component paths
-	if (t.fire > 0) {
-	  const intensity = Math.min(1, t.fire / 100);
-	  const pulse = 0.85 + 0.15 * Math.sin(performance.now() / 90);
+    // 3. FIRE – drawn ONLY along the component paths
+    if (t.fire > 0) {
+      const intensity = Math.min(1, t.fire / 100);
+      const pulse = 0.85 + 0.15 * Math.sin(performance.now() / 90);
 
-	  // outer glow following the path
-	  ctx.strokeStyle = `rgba(255, 90, 0, ${0.45 * intensity * pulse})`;
-	  ctx.lineWidth = 9 + intensity * 6;
-	  ctx.lineCap = 'round';
-	  for (const d of paths) {
-		drawPath(d, scale, ox, oy, t.rot);
-		ctx.stroke();
-	  }
+      // outer glow following the path
+      ctx.strokeStyle = `rgba(255, 90, 0, ${0.45 * intensity * pulse})`;
+      ctx.lineWidth = 9 + intensity * 6;
+      ctx.lineCap = 'round';
+      for (const d of paths) {
+        drawPath(d, scale, ox, oy, t.rot);
+        ctx.stroke();
+      }
 
-	  // mid flame layer
-	  ctx.strokeStyle = `rgba(255, 160, 20, ${0.7 * intensity})`;
-	  ctx.lineWidth = 5 + intensity * 3;
-	  for (const d of paths) {
-		drawPath(d, scale, ox, oy, t.rot);
-		ctx.stroke();
-	  }
+      // mid flame layer
+      ctx.strokeStyle = `rgba(255, 160, 20, ${0.7 * intensity})`;
+      ctx.lineWidth = 5 + intensity * 3;
+      for (const d of paths) {
+        drawPath(d, scale, ox, oy, t.rot);
+        ctx.stroke();
+      }
 
-	  // bright core
-	  ctx.strokeStyle = `rgba(255, 240, 120, ${0.9 * intensity})`;
-	  ctx.lineWidth = 2.2 + intensity * 1.5;
-	  for (const d of paths) {
-		drawPath(d, scale, ox, oy, t.rot);
-		ctx.stroke();
-	  }
-	}
+      // bright core
+      ctx.strokeStyle = `rgba(255, 240, 120, ${0.9 * intensity})`;
+      ctx.lineWidth = 2.2 + intensity * 1.5;
+      for (const d of paths) {
+        drawPath(d, scale, ox, oy, t.rot);
+        ctx.stroke();
+      }
+    }
   }
 
   // water drops
   for (const d of waterDrops) {
-	ctx.fillStyle = `rgba(100, 185, 255, ${d.life * 1.5})`;
-	ctx.beginPath();
-	ctx.arc(d.x, d.y, 3.2, 0, Math.PI * 2);
-	ctx.fill();
+    ctx.fillStyle = `rgba(100, 185, 255, ${d.life * 1.5})`;
+    ctx.beginPath();
+    ctx.arc(d.x, d.y, 3.2, 0, Math.PI * 2);
+    ctx.fill();
   }
 
   // particles
   for (const p of particles) {
-	ctx.globalAlpha = Math.max(0, p.life);
-	ctx.fillStyle = p.color;
-	ctx.beginPath();
-	ctx.arc(p.x, p.y, 2.8, 0, Math.PI * 2);
-	ctx.fill();
-	ctx.globalAlpha = 1;
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
   }
 
   // spray indicator
   if (mouse.down) {
-	ctx.strokeStyle = 'rgba(100, 185, 255, 0.55)';
-	ctx.lineWidth = 2;
-	ctx.beginPath();
-	ctx.arc(mouse.x, mouse.y, 16, 0, Math.PI * 2);
-	ctx.stroke();
+    ctx.strokeStyle = 'rgba(100, 185, 255, 0.55)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(mouse.x, mouse.y, 16, 0, Math.PI * 2);
+    ctx.stroke();
   }
 }
 
 function gameOver() {
   running = false;
   document.getElementById('msg-text').innerHTML =
-	`Game Over<br><span style="font-size:1.1rem">Score: ${score}</span>`;
+    `Game Over<br><span style="font-size:1.1rem">Score: ${score}</span>`;
   document.getElementById('restart').textContent = 'Play Again';
   document.getElementById('message').classList.add('show');
 }
